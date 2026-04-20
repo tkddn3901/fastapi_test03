@@ -89,3 +89,41 @@ def postDelete(num: int = Form(...),
 
     # 특정 경로로 요청을 다시 하도록 리다일렉트 응답을 준다.
     return RedirectResponse("/post", status_code=302)
+
+@app.get("/post/update", response_class=HTMLResponse)
+def postUpdateForm(request: Request, num: int, db: Session = Depends(get_db)):
+    # 1. 전달받은 num을 이용해 해당 게시글 정보를 조회합니다.
+    query = text("SELECT num, title, content FROM post WHERE num = :num")
+    result = db.execute(query, {"num": num}).fetchone()
+    
+    # 2. 만약 해당 번호의 글이 없다면 (선택사항: 에러 처리나 리다이렉트)
+    if result is None:
+        return RedirectResponse("/post", status_code=303)
+
+    # 3. 조회된 결과(result)를 'post'라는 이름으로 템플릿에 넘겨줍니다.
+    return templates.TemplateResponse(
+        request=request, 
+        name="post/new-update.html", 
+        context={"post": result}
+    )
+
+
+@app.post("/post/update")
+def postUpdate(
+    num: int = Form(...),      # HTML의 <input type="hidden" name="num"> 값을 받음
+    title: str = Form(...), 
+    content: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    # 1. 특정 번호(num)를 가진 행만 업데이트하도록 WHERE 절 추가
+    query = text("""
+        UPDATE post
+        SET title = :title, content = :content
+        WHERE num = :num
+    """)
+    
+    # 2. 실행 시 num 값도 함께 전달
+    db.execute(query, {"title": title, "content": content, "num": num})
+    db.commit()
+
+    return RedirectResponse("/post", status_code=302)
