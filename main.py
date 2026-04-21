@@ -8,15 +8,18 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-
-
+from fastapi.staticfiles import StaticFiles
 from database import get_db
 
 
 # fastapi 객체 생성
 app = FastAPI()
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 # jinja2 템플릿 객체 생성 (templates 파일들이 어디에 있는지 알려야 한다.)
 templates = Jinja2Templates(directory="templates")
+
 
 
 @app.get("/", response_class=HTMLResponse)
